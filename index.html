@@ -95,9 +95,23 @@
   <div class="container">
     <h2>Suivi d'épargne</h2>
     <p style="text-align:center;">
-      <a href="https://www.traderepublic.com/fr-fr" target="_blank" style="color:#4CAF50; text-decoration:none; font-weight:bold;">
+      <p style="text-align:center;">
+      <a href="#" onclick="openTradeApp()" style="color:#4CAF50; text-decoration:none; font-weight:bold;">
         ➕ Aller sur Trade Republic pour épargner
       </a>
+    </p>
+
+    <script>
+      function openTradeApp() {
+        const now = Date.now();
+        window.location = "traderepublic://";
+        setTimeout(() => {
+          if (Date.now() - now < 2000) {
+            window.location = "https://www.traderepublic.com/fr-fr";
+          }
+        }, 1500);
+      }
+    </script>
     </p>
 
     <label for="objectif">Objectif d'épargne (€)</label>
