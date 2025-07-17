@@ -1,93 +1,104 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <link rel="apple-touch-icon" href="icon.png">
-  <link rel="manifest" href="manifest.json">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Mon épargne">
-  <meta name="theme-color" content="#4CAF50">
-
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Suivi d'épargne vers objectif personnalisé</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #e3f2fd, #e8f5e9);
       margin: 0;
       padding: 2rem;
+      color: #333;
     }
     .container {
       max-width: 600px;
       margin: auto;
       background: white;
       padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      border-radius: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
     h2 {
       text-align: center;
       margin-bottom: 1.5rem;
+      color: #2e7d32;
     }
     label {
       display: block;
       margin: 1rem 0 0.5rem;
+      font-weight: bold;
     }
     input, select {
       width: 100%;
-      padding: 0.5rem;
+      padding: 0.6rem;
       font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 0.5rem;
+      border: 1px solid #cfd8dc;
+      border-radius: 0.75rem;
+      background-color: #f9f9f9;
+      transition: border-color 0.2s ease;
+    }
+    input:focus, select:focus {
+      border-color: #64b5f6;
+      outline: none;
     }
     button {
       margin-top: 1rem;
       width: 100%;
-      padding: 0.7rem;
+      padding: 0.8rem;
       font-size: 1rem;
       background: #4CAF50;
       color: white;
       border: none;
-      border-radius: 0.5rem;
+      border-radius: 1rem;
       cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #388e3c;
     }
     .reset-button {
-      background: #f44336;
-      margin-top: 1rem;
+      background: #e53935;
+    }
+    .reset-button:hover {
+      background: #b71c1c;
     }
     .result, .history {
       margin-top: 2rem;
-      background: #e7ffe7;
+      background: #e8f5e9;
       padding: 1rem;
-      border-radius: 0.5rem;
-    }
-    .history-entry {
-      border-bottom: 1px solid #cceacc;
-      margin-bottom: 0.5rem;
-      padding-bottom: 0.5rem;
+      border-radius: 1rem;
+      border-left: 5px solid #66bb6a;
     }
     .progress-bar-container {
       width: 100%;
-      background: #ddd;
+      background: #cfd8dc;
       border-radius: 1rem;
       margin-top: 1rem;
       overflow: hidden;
     }
     .progress-bar {
-      height: 20px;
-      background: #4CAF50;
+      height: 24px;
+      background: linear-gradient(to right, #4CAF50, #81C784);
       width: 0%;
       color: white;
       text-align: center;
-      line-height: 20px;
+      line-height: 24px;
       font-size: 0.9rem;
+      transition: width 0.4s ease-in-out;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Suivi d'épargne</h2>
+    <p style="text-align:center;">
+      <a href="https://www.traderepublic.com/fr-fr" target="_blank" style="color:#4CAF50; text-decoration:none; font-weight:bold;">
+        ➕ Aller sur Trade Republic pour épargner
+      </a>
+    </p>
 
     <label for="objectif">Objectif d'épargne (€)</label>
     <input type="number" id="objectif" value="10000" oninput="updateProgress()" />
@@ -131,8 +142,8 @@
   <script>
     let capital = localStorage.getItem("capital") ? parseFloat(localStorage.getItem("capital")) : 1500;
     let mois_num = localStorage.getItem("mois_num") ? parseInt(localStorage.getItem("mois_num")) : 0;
-    let historiqueLabels = [];
-    let historiqueCapital = [];
+    let historiqueLabels = JSON.parse(localStorage.getItem("historiqueLabels") || "[]");
+    let historiqueCapital = JSON.parse(localStorage.getItem("historiqueCapital") || "[]");
 
     const ctx = document.getElementById('capitalChart').getContext('2d');
     const capitalChart = new Chart(ctx, {
@@ -192,6 +203,8 @@
 
       historiqueLabels.push(moisNom);
       historiqueCapital.push(capital);
+      localStorage.setItem("historiqueLabels", JSON.stringify(historiqueLabels));
+      localStorage.setItem("historiqueCapital", JSON.stringify(historiqueCapital));
       capitalChart.update();
 
       const res = document.getElementById('resultat');
@@ -219,8 +232,7 @@
     }
 
     function resetAll() {
-      localStorage.removeItem("capital");
-      localStorage.removeItem("mois_num");
+      localStorage.clear();
       capital = 1500;
       mois_num = 0;
       historiqueLabels.length = 0;
@@ -233,7 +245,20 @@
       updateProgress();
     }
 
-    window.onload = updateProgress;
+    function verifierRappelMensuel() {
+      const moisCourant = new Date().getMonth(); // 0 = Janvier
+      const dejaAjoute = historiqueLabels.includes(document.getElementById("mois").options[moisCourant].text);
+      if (!dejaAjoute) {
+        setTimeout(() => {
+          alert("🕒 N'oublie pas d'ajouter ton épargne pour ce mois-ci !");
+        }, 1000);
+      }
+    }
+
+    window.onload = function() {
+      updateProgress();
+      verifierRappelMensuel();
+    }
   </script>
 </body>
 </html>
