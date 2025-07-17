@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mon épargne">
+  <meta name="theme-color" content="#4CAF50">
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suivi d'épargne vers objectif personnalisé</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    label {
+      display: block;
+      margin: 1rem 0 0.5rem;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+    }
+    button {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.7rem;
+      font-size: 1rem;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+    }
+    .reset-button {
+      background: #f44336;
+      margin-top: 1rem;
+    }
+    .result, .history {
+      margin-top: 2rem;
+      background: #e7ffe7;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+    .history-entry {
+      border-bottom: 1px solid #cceacc;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+    .progress-bar-container {
+      width: 100%;
+      background: #ddd;
+      border-radius: 1rem;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 20px;
+      background: #4CAF50;
+      width: 0%;
+      color: white;
+      text-align: center;
+      line-height: 20px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Suivi d'épargne</h2>
+
+    <label for="objectif">Objectif d'épargne (€)</label>
+    <input type="number" id="objectif" value="10000" oninput="updateProgress()" />
+
+    <label for="mois">Mois</label>
+    <select id="mois">
+      <option>Janvier</option>
+      <option>Février</option>
+      <option>Mars</option>
+      <option>Avril</option>
+      <option>Mai</option>
+      <option>Juin</option>
+      <option>Juillet</option>
+      <option>Août</option>
+      <option>Septembre</option>
+      <option>Octobre</option>
+      <option>Novembre</option>
+      <option>Décembre</option>
+    </select>
+
+    <label for="revenu">Revenu du mois (€)</label>
+    <input type="number" id="revenu" />
+
+    <label for="depenses">Dépenses du mois (€)</label>
+    <input type="number" id="depenses" />
+
+    <label for="epargne">Montant mis sur Trade Republic (€)</label>
+    <input type="number" id="epargne" />
+
+    <button onclick="calculer()">Ajouter et Calculer</button>
+    <button class="reset-button" onclick="resetAll()">Réinitialiser</button>
+
+    <div class="result" id="resultat" style="display:none;"></div>
+    <div class="progress-bar-container">
+      <div id="progressBar" class="progress-bar">0%</div>
+    </div>
+    <div class="history" id="historique"></div>
+    <canvas id="capitalChart" width="400" height="200" style="margin-top:2rem;"></canvas>
+  </div>
+
+  <script>
+    let capital = localStorage.getItem("capital") ? parseFloat(localStorage.getItem("capital")) : 1500;
+    let mois_num = localStorage.getItem("mois_num") ? parseInt(localStorage.getItem("mois_num")) : 0;
+    let historiqueLabels = [];
+    let historiqueCapital = [];
+
+    const ctx = document.getElementById('capitalChart').getContext('2d');
+    const capitalChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: historiqueLabels,
+        datasets: [{
+          label: 'Capital (€)',
+          data: historiqueCapital,
+          borderColor: '#4CAF50',
+          backgroundColor: 'rgba(76, 175, 80, 0.1)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+
+    function updateProgress() {
+      const objectif = parseFloat(document.getElementById("objectif").value) || 10000;
+      const percent = Math.min((capital / objectif) * 100, 100).toFixed(1);
+      const progress = document.getElementById("progressBar");
+      progress.style.width = percent + "%";
+      progress.innerText = percent + "%";
+    }
+
+    function calculer() {
+      const moisNom = document.getElementById('mois').value;
+      const revenu = parseFloat(document.getElementById('revenu').value);
+      const depenses = parseFloat(document.getElementById('depenses').value);
+      const epargne = parseFloat(document.getElementById('epargne').value);
+      const interets = capital * (0.02 / 12);
+      const objectif = parseFloat(document.getElementById("objectif").value);
+
+      if (isNaN(revenu) || isNaN(depenses) || isNaN(epargne)) {
+        alert("Merci de remplir tous les champs.");
+        return;
+      }
+
+      capital += epargne + interets;
+      mois_num++;
+      localStorage.setItem("capital", capital);
+      localStorage.setItem("mois_num", mois_num);
+
+      updateProgress();
+
+      historiqueLabels.push(moisNom);
+      historiqueCapital.push(capital);
+      capitalChart.update();
+
+      const res = document.getElementById('resultat');
+      res.style.display = 'block';
+      res.innerHTML = `
+        <strong>${moisNom} (Mois ${mois_num})</strong><br>
+        Revenu : ${revenu} €<br>
+        Dépenses : ${depenses} €<br>
+        Epargne versée : ${epargne} €<br>
+        Intérêts ce mois : ${interets.toFixed(2)} €<br>
+        <hr>
+        <strong>Capital total estimé : ${capital.toFixed(2)} €</strong><br>
+        <strong>Objectif ${objectif} € : ${capital >= objectif ? 'Atteint 🎉' : 'En cours...'}</strong>
+      `;
+
+      const historique = document.getElementById("historique");
+      const entry = document.createElement("div");
+      entry.className = "history-entry";
+      entry.innerHTML = `<strong>${moisNom}</strong> - Revenu: ${revenu} €, Dépenses: ${depenses} €, Epargne: ${epargne} €, Capital: ${capital.toFixed(2)} €`;
+      historique.prepend(entry);
+
+      document.getElementById('revenu').value = '';
+      document.getElementById('depenses').value = '';
+      document.getElementById('epargne').value = '';
+    }
+
+    function resetAll() {
+      localStorage.removeItem("capital");
+      localStorage.removeItem("mois_num");
+      capital = 1500;
+      mois_num = 0;
+      historiqueLabels.length = 0;
+      historiqueCapital.length = 0;
+      capitalChart.data.labels = [];
+      capitalChart.data.datasets[0].data = [];
+      capitalChart.update();
+      document.getElementById('resultat').style.display = 'none';
+      document.getElementById('historique').innerHTML = '';
+      updateProgress();
+    }
+
+    window.onload = updateProgress;
+  </script>
+</body>
+</html>
