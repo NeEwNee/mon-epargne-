@@ -195,7 +195,21 @@
       progress.innerText = percent + "%";
     }
 
-    function calculer() {
+    
+    let historiqueDetaille = JSON.parse(localStorage.getItem("historiqueDetaille") || "[]");
+
+    function afficherHistorique() {
+      const historique = document.getElementById("historique");
+      historique.innerHTML = "";
+      historiqueDetaille.slice().reverse().forEach((item) => {
+        const entry = document.createElement("div");
+        entry.className = "history-entry";
+        entry.innerHTML = `<strong>${item.mois}</strong> - Revenu: ${item.revenu} €, Dépenses: ${item.depenses} €, Épargne: ${item.epargne} €, Capital: ${item.capital} €`;
+        historique.appendChild(entry);
+      });
+    }
+
+function calculer() {
       const moisNom = document.getElementById('mois').value;
       const revenu = parseFloat(document.getElementById('revenu').value);
       const depenses = parseFloat(document.getElementById('depenses').value);
@@ -208,8 +222,26 @@
         return;
       }
 
+
       capital += epargne + interets;
       mois_num++;
+      localStorage.setItem("capital", capital);
+      localStorage.setItem("mois_num", mois_num);
+
+      historiqueLabels.push(moisNom);
+      historiqueCapital.push(capital);
+      localStorage.setItem("historiqueLabels", JSON.stringify(historiqueLabels));
+      localStorage.setItem("historiqueCapital", JSON.stringify(historiqueCapital));
+      historiqueDetaille.push({
+        mois: moisNom,
+        revenu: revenu,
+        depenses: depenses,
+        epargne: epargne,
+        capital: capital.toFixed(2)
+      });
+      localStorage.setItem("historiqueDetaille", JSON.stringify(historiqueDetaille));
+      afficherHistorique();
+
       localStorage.setItem("capital", capital);
       localStorage.setItem("mois_num", mois_num);
 
@@ -238,7 +270,6 @@
       const entry = document.createElement("div");
       entry.className = "history-entry";
       entry.innerHTML = `<strong>${moisNom}</strong> - Revenu: ${revenu} €, Dépenses: ${depenses} €, Epargne: ${epargne} €, Capital: ${capital.toFixed(2)} €`;
-      historique.prepend(entry);
 
       document.getElementById('revenu').value = '';
       document.getElementById('depenses').value = '';
@@ -270,6 +301,7 @@
     }
 
     window.onload = function() {
+  afficherHistorique();
       updateProgress();
       verifierRappelMensuel();
     }
