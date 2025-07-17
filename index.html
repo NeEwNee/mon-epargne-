@@ -266,7 +266,7 @@
   <h2>📊 Cours des ETF</h2>
 
   <label for="etfSearch" style="font-weight:bold;">🔎 Rechercher un ETF</label>
-  <input type="text" id="etfSearch" placeholder="Ex: VOO, IWDA, MSCI..." oninput="filterETF()" 
+  <input type="text" id="etfSearch" placeholder="Ex: VOO, EUNL, MSCI..." oninput="filterETF()" 
          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #cfd8dc; border-radius:0.75rem; background-color:#f9f9f9; margin-bottom:1rem;" />
 
   <ul id="etfList" style="list-style:none; padding-left:0;">
@@ -276,7 +276,7 @@
 
 <script>
   const etfs = [
-    { name: "MSCI World", ticker: "IWDA.AS" },
+    { name: "MSCI World", ticker: "EUNL.DE" },  // fiable sur Yahoo
     { name: "S&P 500", ticker: "VOO" },
     { name: "Nasdaq 100", ticker: "QQQ" },
     { name: "Emerging Markets", ticker: "IEMG" },
