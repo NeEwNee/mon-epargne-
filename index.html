@@ -26,19 +26,27 @@
       margin-bottom: 1.5rem;
       color: #2e7d32;
     }
-    label, input, select, button {
+    label {
       display: block;
-      width: 100%;
-      margin-bottom: 1rem;
+      margin: 1rem 0 0.5rem;
+      font-weight: bold;
     }
     input, select {
+      width: 100%;
       padding: 0.6rem;
       font-size: 1rem;
       border: 1px solid #cfd8dc;
       border-radius: 0.75rem;
       background-color: #f9f9f9;
+      transition: border-color 0.2s ease;
+    }
+    input:focus, select:focus {
+      border-color: #64b5f6;
+      outline: none;
     }
     button {
+      margin-top: 1rem;
+      width: 100%;
       padding: 0.8rem;
       font-size: 1rem;
       background: #4CAF50;
@@ -46,100 +54,210 @@
       border: none;
       border-radius: 1rem;
       cursor: pointer;
+      transition: background 0.3s ease;
     }
-    nav {
+    button:hover {
+      background: #388e3c;
+    }
+    .reset-button {
+      background: #e53935;
+    }
+    .reset-button:hover {
+      background: #b71c1c;
+    }
+    .result, .history {
+      margin-top: 2rem;
+      background: #e8f5e9;
+      padding: 1rem;
+      border-radius: 1rem;
+      border-left: 5px solid #66bb6a;
+    }
+    .progress-bar-container {
+      width: 100%;
+      background: #cfd8dc;
+      border-radius: 1rem;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 24px;
+      background: linear-gradient(to right, #4CAF50, #81C784);
+      width: 0%;
+      color: white;
       text-align: center;
-      margin-bottom: 2rem;
-    }
-    nav button {
-      width: auto;
-      margin: 0 0.5rem;
-    }
-    .tab {
-      display: none;
-    }
-    .tab.active {
-      display: block;
+      line-height: 24px;
+      font-size: 0.9rem;
+      transition: width 0.4s ease-in-out;
     }
   </style>
 </head>
 <body>
-  <nav>
-    <button onclick="switchTab('suivi')">Suivi d'épargne</button>
-    <button onclick="switchTab('projection')">Projection future</button>
-  </nav>
-
-  <div id="suivi" class="container tab active">
+  <div class="container">
     <h2>Suivi d'épargne</h2>
-    <!-- Ancien code suivi ici (formulaire, graphique, historique, etc.) -->
-    <p>Section suivi ici... (copier le code actuel)</p>
-  </div>
+    <p style="text-align:center;">
+      <a href="https://www.traderepublic.com/fr-fr" target="_blank" style="color:#4CAF50; text-decoration:none; font-weight:bold;">
+        ➕ Aller sur Trade Republic pour épargner
+      </a>
+    </p>
 
-  <div id="projection" class="container tab">
-    <h2>Projection de capital</h2>
-    <label for="capitalProjection">Capital actuel (€)</label>
-    <input type="number" id="capitalProjection" value="1500">
+    <label for="objectif">Objectif d'épargne (€)</label>
+    <input type="number" id="objectif" value="10000" oninput="updateProgress()" />
 
-    <label for="versementMensuel">Versement mensuel (€)</label>
-    <input type="number" id="versementMensuel" value="300">
+    <label for="mois">Mois</label>
+    <select id="mois">
+      <option>Janvier</option>
+      <option>Février</option>
+      <option>Mars</option>
+      <option>Avril</option>
+      <option>Mai</option>
+      <option>Juin</option>
+      <option>Juillet</option>
+      <option>Août</option>
+      <option>Septembre</option>
+      <option>Octobre</option>
+      <option>Novembre</option>
+      <option>Décembre</option>
+    </select>
 
-    <label for="tauxAnnuel">Taux d'intérêt annuel (%)</label>
-    <input type="number" id="tauxAnnuel" value="2">
+    <label for="revenu">Revenu du mois (€)</label>
+    <input type="number" id="revenu" />
 
-    <label for="objectifProjection">Objectif de capital (€)</label>
-    <input type="number" id="objectifProjection" value="10000">
+    <label for="depenses">Dépenses du mois (€)</label>
+    <input type="number" id="depenses" />
 
-    <button onclick="calculerProjection()">Calculer projection</button>
+    <label for="epargne">Montant mis sur Trade Republic (€)</label>
+    <input type="number" id="epargne" />
 
-    <div id="resultatProjection" style="margin-top:1rem;"></div>
-    <canvas id="chartProjection" height="150" style="margin-top:2rem;"></canvas>
+    <button onclick="calculer()">Ajouter et Calculer</button>
+    <button class="reset-button" onclick="resetAll()">Réinitialiser</button>
+
+    <div class="result" id="resultat" style="display:none;"></div>
+    <div class="progress-bar-container">
+      <div id="progressBar" class="progress-bar">0%</div>
+    </div>
+    <div class="history" id="historique"></div>
+    <canvas id="capitalChart" width="400" height="200" style="margin-top:2rem;"></canvas>
   </div>
 
   <script>
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-      document.getElementById(tabId).classList.add('active');
+    let capital = localStorage.getItem("capital") ? parseFloat(localStorage.getItem("capital")) : 1500;
+    let mois_num = localStorage.getItem("mois_num") ? parseInt(localStorage.getItem("mois_num")) : 0;
+    let historiqueLabels = JSON.parse(localStorage.getItem("historiqueLabels") || "[]");
+    let historiqueCapital = JSON.parse(localStorage.getItem("historiqueCapital") || "[]");
+
+    const ctx = document.getElementById('capitalChart').getContext('2d');
+    const capitalChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: historiqueLabels,
+        datasets: [{
+          label: 'Capital (€)',
+          data: historiqueCapital,
+          borderColor: '#4CAF50',
+          backgroundColor: 'rgba(76, 175, 80, 0.1)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+
+    function updateProgress() {
+      const objectif = parseFloat(document.getElementById("objectif").value) || 10000;
+      const percent = Math.min((capital / objectif) * 100, 100).toFixed(1);
+      const progress = document.getElementById("progressBar");
+      progress.style.width = percent + "%";
+      progress.innerText = percent + "%";
     }
 
-    function calculerProjection() {
-      const capital = parseFloat(document.getElementById("capitalProjection").value);
-      const mensualite = parseFloat(document.getElementById("versementMensuel").value);
-      const taux = parseFloat(document.getElementById("tauxAnnuel").value) / 100 / 12;
-      const objectif = parseFloat(document.getElementById("objectifProjection").value);
+    function calculer() {
+      const moisNom = document.getElementById('mois').value;
+      const revenu = parseFloat(document.getElementById('revenu').value);
+      const depenses = parseFloat(document.getElementById('depenses').value);
+      const epargne = parseFloat(document.getElementById('epargne').value);
+      const interets = capital * (0.02 / 12);
+      const objectif = parseFloat(document.getElementById("objectif").value);
 
-      let mois = 0;
-      let historique = [];
-      let currentCapital = capital;
-
-      while (currentCapital < objectif && mois < 600) {
-        currentCapital += mensualite + (currentCapital * taux);
-        historique.push(currentCapital.toFixed(2));
-        mois++;
+      if (isNaN(revenu) || isNaN(depenses) || isNaN(epargne)) {
+        alert("Merci de remplir tous les champs.");
+        return;
       }
 
-      document.getElementById("resultatProjection").innerHTML =
-        `✅ Objectif atteint en <strong>${mois}</strong> mois (soit ${(mois/12).toFixed(1)} ans)<br><strong>Capital final : ${parseFloat(currentCapital).toFixed(2)} €</strong>`;
+      capital += epargne + interets;
+      mois_num++;
+      localStorage.setItem("capital", capital);
+      localStorage.setItem("mois_num", mois_num);
 
-      const ctx = document.getElementById("chartProjection").getContext("2d");
-      new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: historique.map((_, i) => `M${i+1}`),
-          datasets: [{
-            label: "Projection Capital €",
-            data: historique,
-            borderColor: "#4CAF50",
-            backgroundColor: "rgba(76, 175, 80, 0.1)",
-            fill: true,
-            tension: 0.3
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true } }
-        }
-      });
+      updateProgress();
+
+      historiqueLabels.push(moisNom);
+      historiqueCapital.push(capital);
+      localStorage.setItem("historiqueLabels", JSON.stringify(historiqueLabels));
+      localStorage.setItem("historiqueCapital", JSON.stringify(historiqueCapital));
+      capitalChart.update();
+
+      const res = document.getElementById('resultat');
+      res.style.display = 'block';
+      res.innerHTML = `
+        <strong>${moisNom} (Mois ${mois_num})</strong><br>
+        Revenu : ${revenu} €<br>
+        Dépenses : ${depenses} €<br>
+        Epargne versée : ${epargne} €<br>
+        Intérêts ce mois : ${interets.toFixed(2)} €<br>
+        <hr>
+        <strong>Capital total estimé : ${capital.toFixed(2)} €</strong><br>
+        <strong>Objectif ${objectif} € : ${capital >= objectif ? 'Atteint 🎉' : 'En cours...'}</strong>
+      `;
+
+      const historique = document.getElementById("historique");
+      const entry = document.createElement("div");
+      entry.className = "history-entry";
+      entry.innerHTML = `<strong>${moisNom}</strong> - Revenu: ${revenu} €, Dépenses: ${depenses} €, Epargne: ${epargne} €, Capital: ${capital.toFixed(2)} €`;
+      historique.prepend(entry);
+
+      document.getElementById('revenu').value = '';
+      document.getElementById('depenses').value = '';
+      document.getElementById('epargne').value = '';
+    }
+
+    function resetAll() {
+      localStorage.clear();
+      capital = 1500;
+      mois_num = 0;
+      historiqueLabels.length = 0;
+      historiqueCapital.length = 0;
+      capitalChart.data.labels = [];
+      capitalChart.data.datasets[0].data = [];
+      capitalChart.update();
+      document.getElementById('resultat').style.display = 'none';
+      document.getElementById('historique').innerHTML = '';
+      updateProgress();
+    }
+
+    function verifierRappelMensuel() {
+      const moisCourant = new Date().getMonth(); // 0 = Janvier
+      const dejaAjoute = historiqueLabels.includes(document.getElementById("mois").options[moisCourant].text);
+      if (!dejaAjoute) {
+        setTimeout(() => {
+          alert("🕒 N'oublie pas d'ajouter ton épargne pour ce mois-ci !");
+        }, 1000);
+      }
+    }
+
+    window.onload = function() {
+      updateProgress();
+      verifierRappelMensuel();
     }
   </script>
 </body>
