@@ -261,89 +261,7 @@
     }
   </script>
 
-
-<div class="container" style="margin-top:2rem;">
-  <h2>📊 Cours des ETF</h2>
-  <input type="text" id="etfSearch" placeholder="Rechercher un ETF (ex: VOO, IWDA...)" oninput="filterETF()" />
-
-  <ul id="etfList" style="list-style:none; padding-left:0; margin-top:1rem;">
-    <!-- Les ETF seront injectés ici -->
-  </ul>
-</div>
-
-<script>
-  const etfs = [
-    { name: "MSCI World", ticker: "IWDA.AS" },
-    { name: "S&P 500", ticker: "VOO" },
-    { name: "Nasdaq 100", ticker: "QQQ" },
-    { name: "Emerging Markets", ticker: "IEMG" },
-    { name: "Euro Stoxx 50", ticker: "FEZ" },
-    { name: "CAC 40", ticker: "^FCHI" },
-    { name: "All World", ticker: "VWCE.DE" },
-    { name: "Clean Energy", ticker: "ICLN" },
-    { name: "Healthcare", ticker: "XLV" },
-    { name: "Dividend Aristocrats", ticker: "NOBL" }
-  ];
-
-  async function fetchETFPrice(ticker) {
-    try {
-      const res = await fetch(`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${ticker}`);
-      const json = await res.json();
-      const data = json.quoteResponse.result[0];
-      return {
-        price: data.regularMarketPrice,
-        change: data.regularMarketChangePercent,
-      };
-    } catch (e) {
-      return { price: "N/A", change: "N/A" };
-    }
-  }
-
-  async function renderETFs() {
-    const list = document.getElementById("etfList");
-    list.innerHTML = "";
-    for (const etf of etfs) {
-      const { price, change } = await fetchETFPrice(etf.ticker);
-      const li = document.createElement("li");
-      const changeColor = change >= 0 ? '#388e3c' : '#d32f2f';
-      li.style.marginBottom = "1rem";
-      li.innerHTML = `
-        <div style="padding:1rem; border-radius:1rem; background:#f0f4f8; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
-          <strong>${etf.name}</strong> (${etf.ticker})<br>
-          💶 <span style="font-weight:bold;">${price} €</span> 
-          <span style="color:${changeColor};">(${change >= 0 ? '+' : ''}${change.toFixed(2)}%)</span><br>
-          <button onclick="openTradeRepublic()" style="margin-top:0.5rem;">📲 Ouvrir Trade Republic</button>
-        </div>
-      `;
-      list.appendChild(li);
-    }
-  }
-
-  function openTradeRepublic() {
-    const now = Date.now();
-    window.location = "traderepublic://";
-    setTimeout(() => {
-      if (Date.now() - now < 2000) {
-        window.location = "https://www.traderepublic.com/fr-fr";
-      }
-    }, 1500);
-  }
-
-  function filterETF() {
-    const term = document.getElementById("etfSearch").value.toLowerCase();
-    const items = document.querySelectorAll("#etfList li");
-    items.forEach(item => {
-      const text = item.innerText.toLowerCase();
-      item.style.display = text.includes(term) ? "" : "none";
-    });
-  }
-
-  window.addEventListener("load", renderETFs);
-</script>
-<!-- ====== FIN SECTION ETF ====== -->
-
-
-<!-- ====== SECTION ETF ====== -->
+<!-- ====== SECTION ETF CORRIGÉE ====== -->
 <div class="container" style="margin-top:2rem;">
   <h2>📊 Cours des ETF</h2>
 
@@ -352,7 +270,7 @@
          style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #cfd8dc; border-radius:0.75rem; background-color:#f9f9f9; margin-bottom:1rem;" />
 
   <ul id="etfList" style="list-style:none; padding-left:0;">
-    <!-- Les ETF seront injectés ici -->
+    <li>Chargement des ETF...</li>
   </ul>
 </div>
 
@@ -380,7 +298,8 @@
         change: data.regularMarketChangePercent,
       };
     } catch (e) {
-      return { price: "N/A", change: "N/A" };
+      console.error("Erreur de chargement pour", ticker, e);
+      return { price: "Erreur", change: 0 };
     }
   }
 
@@ -396,7 +315,7 @@
         <div style="padding:1rem; border-radius:1rem; background:#f0f4f8; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
           <strong>${etf.name}</strong> (${etf.ticker})<br>
           💶 <span style="font-weight:bold;">${price} €</span> 
-          <span style="color:${changeColor};">(${change >= 0 ? '+' : ''}${change.toFixed(2)}%)</span><br>
+          <span style="color:${changeColor};">(${isNaN(change) ? '' : (change >= 0 ? '+' : '') + change.toFixed(2)}%)</span><br>
           <button onclick="openTradeRepublic()" style="margin-top:0.5rem;">📲 Ouvrir Trade Republic</button>
         </div>
       `;
