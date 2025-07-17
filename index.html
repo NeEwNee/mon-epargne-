@@ -261,22 +261,19 @@
     }
   </script>
 
-<!-- ====== SECTION ETF CORRIGÉE ====== -->
+<!-- ====== SECTION ETF ====== -->
 <div class="container" style="margin-top:2rem;">
   <h2>📊 Cours des ETF</h2>
+  <input type="text" id="etfSearch" placeholder="Rechercher un ETF (ex: VOO, IWDA...)" oninput="filterETF()" />
 
-  <label for="etfSearch" style="font-weight:bold;">🔎 Rechercher un ETF</label>
-  <input type="text" id="etfSearch" placeholder="Ex: VOO, EUNL, MSCI..." oninput="filterETF()" 
-         style="width:100%; padding:0.6rem; font-size:1rem; border:1px solid #cfd8dc; border-radius:0.75rem; background-color:#f9f9f9; margin-bottom:1rem;" />
-
-  <ul id="etfList" style="list-style:none; padding-left:0;">
-    <li>Chargement des ETF...</li>
+  <ul id="etfList" style="list-style:none; padding-left:0; margin-top:1rem;">
+    <!-- Les ETF seront injectés ici -->
   </ul>
 </div>
 
 <script>
   const etfs = [
-    { name: "MSCI World", ticker: "EUNL.DE" },  // fiable sur Yahoo
+    { name: "MSCI World", ticker: "IWDA.AS" },
     { name: "S&P 500", ticker: "VOO" },
     { name: "Nasdaq 100", ticker: "QQQ" },
     { name: "Emerging Markets", ticker: "IEMG" },
@@ -298,8 +295,7 @@
         change: data.regularMarketChangePercent,
       };
     } catch (e) {
-      console.error("Erreur de chargement pour", ticker, e);
-      return { price: "Erreur", change: 0 };
+      return { price: "N/A", change: "N/A" };
     }
   }
 
@@ -315,7 +311,7 @@
         <div style="padding:1rem; border-radius:1rem; background:#f0f4f8; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
           <strong>${etf.name}</strong> (${etf.ticker})<br>
           💶 <span style="font-weight:bold;">${price} €</span> 
-          <span style="color:${changeColor};">(${isNaN(change) ? '' : (change >= 0 ? '+' : '') + change.toFixed(2)}%)</span><br>
+          <span style="color:${changeColor};">(${change >= 0 ? '+' : ''}${change.toFixed(2)}%)</span><br>
           <button onclick="openTradeRepublic()" style="margin-top:0.5rem;">📲 Ouvrir Trade Republic</button>
         </div>
       `;
